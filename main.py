@@ -4,27 +4,41 @@ import pandas as pd
 import pylev
 import sys
 
-# Look at the first [LIM] chars for comparison
-LIM = 5
+#Truncate to n chars
+TRUNC = 5
 
-def levenshtein(x1, x2):
-  x1 = x1[:LIM]
-  x2 = x2[:LIM]
-  return pylev.levenshtein(x1, x2)
+# Do not consider length in lev (Truncate both to the len of the smaller)
+NO_LEN = 1
 
-def lev_func(x):
-  def lev(n):
-    #return pylev.levenshtein(x, n)
-    return levenshtein(x, n)
-  return lev
+# Return the similarity between string s1 and s2. Currently runs on a
+# levenshtein basis with options for string truncation and consideration of
+# length differences.
+def similarity(s1, s2):
+  # Length considerations on/off
+  if NO_LEN == 1:
+    trunc_len = min(len(s1), len(s2), TRUNC)
+  else:
+    trunc_len = TRUNC
 
-def compute_similarity(names):
-  dists = pd.DataFrame(index=names, columns=names)
-  for n in names:
-    callthis = lev_func(n)
-    dists.ix[n] = list(names.map(callthis))
+  # Truncate
+  s1 = s1[:trunc_len]
+  s2 = s2[:trunc_len]
 
-  dists.to_csv("./name_similarity.csv")
+  # Return the levenshtein distance between the two modified strings
+  return pylev.levenshtein(s1, s2)
+
+
+def cmp_func(x):
+  def cmp(n):
+    return similarity(x, n)
+  return cmp
+
+def compute_similarity(items):
+  distances = pd.DataFrame(index=items, columns=items)
+  for n in items:
+    callthis = cmp_func(n)
+    distances.ix[n] = list(items.map(callthis))
+  return distances
 
 def aggregate_matches(A):
   results = []
@@ -45,4 +59,11 @@ def aggregate_matches(A):
   results = pd.DataFrame(results, columns=["Name", "No. Matches", "Matches"])
   results.to_csv("./matches.csv")
 
+if __name__ == "__main__":
+  lead_df = pd.read_csv('input/lead_list.csv')
+  names = lead_df['Account Name']
+  names = names.fillna('NONE')
+  names = names.head(int(sys.argv[1]))
+  A = compute_similarity(names)
+  print A
 
