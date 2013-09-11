@@ -60,10 +60,15 @@ def aggregate_matches(A):
   results.to_csv("./matches.csv")
 
 if __name__ == "__main__":
-  lead_df = pd.read_csv('input/lead_list.csv')
-  names = lead_df['Account Name']
-  names = names.fillna('NONE')
-  names = names.head(int(sys.argv[1]))
-  A = compute_similarity(names)
-  print A
+  while TRUNC < 18:
+    lead_df = pd.read_csv('input/lead_list.csv')
+    names = lead_df['Account Name']
+    names = names.fillna('NONE')
+
+    # Limit size for testing
+    #names = names.head(int(sys.argv[1]))
+
+    A = compute_similarity(names)
+    A.save("output/" + str(TRUNC) + "sim.pd")
+    TRUNC = TRUNC + 3
 
